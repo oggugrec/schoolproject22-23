@@ -1,11 +1,7 @@
 import cv2
 import autopy
 import mediapipe as mp
-# import time
-# import math
-# from ctypes import cast, POINTER
-# from comtypes import CLSCTX_ALL
-# from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+
 
 cap = cv2.VideoCapture(0)
 width, height = autopy.screen.size()
@@ -19,13 +15,11 @@ while True:
     #print(result)
     if result.multi_hand_landmarks:
         enum = enumerate(result.multi_hand_landmarks[0].landmark)
-
         for id, lm in enum:
             h, w, _ = img.shape
             cx, cy = int(lm.x * w), int(lm.y * h)
             cv2.circle(img, (cx, cy), 3, (255, 0, 255))
             if id == 8:
-
                 cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
                 try:
                     autopy.mouse.move(width-cx * width / w, cy * height / h)
