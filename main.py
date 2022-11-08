@@ -15,7 +15,7 @@ keyboard = Controller()
 
 flag_mouse_tracking = False
 tipIds = [4, 8, 12, 16, 20]
-lmb_timer = time.time()
+lmb_timer, rmb_timer = 0, 0
 previous_volume = 100
 
 
@@ -31,7 +31,6 @@ def finger_position(image, hand_no=0):
 
 
 while True:
-
     _, img = cap.read()
     result = hands.process(img)
     if result.multi_hand_landmarks:
@@ -51,6 +50,7 @@ while True:
                 volume = lmList[9][2]
                 total_fingers = fingers.count(1)
             # mouse moving
+            # курсор следует за указательным пальцем, остальные пальцы прижаты
             try:
                 if id == 8 and ((fingers[0] == 1 and fingers[1] == fingers[2] == fingers[3] == 0) or fingers[0] == 0 and
                                 fingers[1] == fingers[2] == fingers[3] == 1):
@@ -62,25 +62,33 @@ while True:
             except IndexError:
                 continue
             # lmb click
+            # отслеживается по раскрытым указательному и среднему пальцам, остальные прижаты
             try:
                 if ((fingers[0] == fingers[1] == 1 and fingers[2] == fingers[3] == 0) or
                         (fingers[0] == fingers[1] == 0 and fingers[2] == fingers[3] == 1)):
-                    lmb_timer = time.time() - lmb_timer
-                    # наебенить время ожиданияif lmb_timer < 1:
-                       # gui.click()
-                # elif lmb_timer > 3:
-                        # lmb_timer = time.time()
+                    if lmb_timer == 0 or time.time() - lmb_timer > 1:
+                        gui.click()
+                        lmb_timer = time.time()
+                    elif time.time() - lmb_timer > 2:
+                        lmb_timer = 0
             except IndexError or gui.FailSafeException:
                 continue
             # rmb click
+            # отслеживается по раскрытым указательному, среднему и безымянному пальцам, остальные прижаты
             try:
                 if (fingers[0] == fingers[1] == fingers[2] == 1 and fingers[3] == 0) or\
                         (fingers[0] == fingers[1] == fingers[2] == 0 and fingers[3] == 1):
-                    gui.click(button='Right')
+                    if rmb_timer == 0 or time.time() - rmb_timer > 1:
+                        gui.click(button='Right')
+                        rmb_timer = time.time()
+                    elif time.time() - rmb_timer > 2:
+                        rmb_timer = 0
             except IndexError or gui.FailSafeException:
                 continue
             # volume changing
-            if abs(lmList[4][1] - lmList[5][1]) > 50 and abs(lmList[20][1] - lmList[15][1]) > 30:
+            # все пальцы раскрыты, большой и мизинец расставлены широко, остальные прижаты друг к другу
+            if abs(lmList[4][1] - lmList[5][1]) > 50 and abs(lmList[20][1] - lmList[15][1]) > 30 and\
+                    fingers[0] == fingers[1] == fingers[2] == 1 and abs(lmList[8][1] - lmList[16][1]) < 75:
                 if volume < previous_volume:
                     keyboard.press(Key.media_volume_up)
                     keyboard.release(Key.media_volume_up)
